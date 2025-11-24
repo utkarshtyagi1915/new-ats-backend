@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Configure CORS
 app.use(
   cors({
-    origin: ["https://ats-ui-fxhpahcebed8aze3.centralindia-01.azurewebsites.net","*","http://localhost:5173","http://localhost:5174"],
+    origin: ["https://gray-bay-040cf091e.3.azurestaticapps.net","*","http://localhost:5173","http://localhost:5174"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     // allowedHeaders: ["Content-Type", "Authorization"],
   }),
