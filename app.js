@@ -6,8 +6,10 @@ const fs = require("fs");
 const analyzeRoutes = require("./routes/analyzeRoutes");
 const formRoutes = require("./routes/formRoutes");
 const commRoutes = require("./routes/commRoutes");
+const JdGenerateRoutes = require("./routes/JdGenerateRoutes")
 
 const app = express();
+
 dotenv.config();
 // Increase payload size limit for large files
 app.use(express.json({ limit: "50mb" }));
@@ -36,6 +38,7 @@ const outputDir = path.join(__dirname, "output");
 app.use("/api/analyze", analyzeRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/communication", commRoutes);
+app.use("/api/JdGenerate", JdGenerateRoutes)
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
