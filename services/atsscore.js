@@ -100,9 +100,13 @@
 //   atsScore,
 // };
 require("dotenv").config();
-const Groq = require("groq-sdk");
+const { AzureOpenAI } = require("openai");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY3 });
+const openai = new AzureOpenAI({
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiKey: process.env.AZURE_OPENAI_API_KEY,
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+});
 
 // Function to analyze resume against job description
 const atsScore = async (resumeText, jobDescription) => {
@@ -144,14 +148,14 @@ const atsScore = async (resumeText, jobDescription) => {
         Below is the Resume Text: "${resumeText}"
         Below is the Job Description: "${jobDescription}"`;
 
-    const response = await groq.chat.completions.create({
+    const response = await openai.chat.completions.create({
       messages: [
         {
           role: "user",
           content: prompt,
         },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: process.env.AZURE_OPENAI_DEPLOYMENT,
     });
 
     const { choices } = response;
@@ -171,7 +175,7 @@ const atsScore = async (resumeText, jobDescription) => {
       };
     }
   } catch (error) {
-    console.error("Error calling Groq API:", error);
+    console.error("Error calling OpenAI API:", error);
     return {
       name: "Unknown",
       email: "Unknown",

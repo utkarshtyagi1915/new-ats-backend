@@ -1,13 +1,17 @@
 require("dotenv").config();
-const Groq = require("groq-sdk");
+const { AzureOpenAI } = require("openai");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const openai = new AzureOpenAI({
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiKey: process.env.AZURE_OPENAI_API_KEY,
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+});
 
 // Function to analyze resume against job description
 const analyzeResume = async (resumeText, jobDescription) => {
   try {
     console.log("Starting resume analysis...");
-    
+
     // Limit text length to avoid token limits
     const truncatedResumeText = resumeText.substring(0, 15000);
     const truncatedJobDescription = jobDescription.substring(0, 3000);
@@ -107,29 +111,29 @@ const analyzeResume = async (resumeText, jobDescription) => {
     - Ensure all values are properly formatted
     - No additional explanations or text outside JSON structure`;
 
-    console.log("Sending request to Groq API...");
-    const response = await groq.chat.completions.create({
+    console.log("Sending request to Azure OpenAI API...");
+    const response = await openai.chat.completions.create({
       messages: [
         {
           role: "user",
           content: prompt,
         },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: process.env.AZURE_OPENAI_DEPLOYMENT,
       temperature: 0.1,
       max_tokens: 4000,
     });
 
-    console.log("Received response from Groq API");
+    console.log("Received response from Azure OpenAI API");
     const { choices } = response;
-    
+
     if (choices && choices[0]?.message?.content) {
       const rawContent = choices[0].message.content;
       console.log("Raw AI Response:", rawContent.substring(0, 200) + "...");
-      
+
       const trimmedContent = extractRelevantJSON(rawContent);
       console.log("Trimmed JSON Content:", trimmedContent.substring(0, 200) + "...");
-      
+
       try {
         const result = JSON.parse(trimmedContent);
         console.log("✅ Successfully parsed JSON response");
@@ -137,7 +141,7 @@ const analyzeResume = async (resumeText, jobDescription) => {
       } catch (parseError) {
         console.error("❌ JSON Parse Error:", parseError.message);
         console.error("Failed content:", trimmedContent);
-        
+
         // Return structured error response
         return createErrorResponse("JSON parsing failed", trimmedContent);
       }
@@ -182,44 +186,44 @@ const createErrorResponse = (message, details = "") => {
 const extractRelevantJSON = (content) => {
   try {
     console.log("Extracting JSON from response...");
-    
+
     // Try to find JSON block markers
     const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/;
     const jsonBlockMatch = content.match(jsonBlockRegex);
-    
+
     if (jsonBlockMatch && jsonBlockMatch[1]) {
       console.log("Found JSON code block");
       return jsonBlockMatch[1].trim();
     }
-    
+
     // Try to find JSON object directly
     const jsonRegex = /{[\s\S]*?}/;
     const jsonMatch = content.match(jsonRegex);
-    
+
     if (jsonMatch) {
       console.log("Found JSON object directly");
       return jsonMatch[0];
     }
-    
+
     // Try to find between specific markers
     const startMarker = '"Job Title Match"';
     const startIndex = content.indexOf(startMarker);
-    
+
     if (startIndex !== -1) {
       console.log("Found start marker, extracting content...");
       const jsonPart = content.substring(startIndex - 1); // Include opening brace
       const endIndex = jsonPart.lastIndexOf('}');
-      
+
       if (endIndex !== -1) {
         return jsonPart.substring(0, endIndex + 1);
       }
-      
+
       return jsonPart + '}'; // Add closing brace if missing
     }
-    
+
     console.log("No JSON structure found, creating fallback");
     return JSON.stringify(createErrorResponse("No JSON found in response"));
-    
+
   } catch (error) {
     console.error("Error in extractRelevantJSON:", error);
     return JSON.stringify(createErrorResponse("JSON extraction failed"));

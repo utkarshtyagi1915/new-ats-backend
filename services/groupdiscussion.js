@@ -1,7 +1,11 @@
 require("dotenv").config();
-const Groq = require("groq-sdk");
+const { AzureOpenAI } = require("openai");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const openai = new AzureOpenAI({
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiKey: process.env.AZURE_OPENAI_API_KEY,
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+});
 
 // Function to process group discussion notes
 const processGroupDiscussion = async (studentNotes, discussionTopic) => {
@@ -27,14 +31,14 @@ const processGroupDiscussion = async (studentNotes, discussionTopic) => {
       Notes: "${studentNotes}"
       Topic: "${discussionTopic}"`;
 
-    const response = await groq.chat.completions.create({
+    const response = await openai.chat.completions.create({
       messages: [
         {
           role: "user",
           content: prompt,
         },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: process.env.AZURE_OPENAI_DEPLOYMENT,
     });
 
     const { choices } = response;
@@ -53,8 +57,8 @@ const processGroupDiscussion = async (studentNotes, discussionTopic) => {
       };
     }
   } catch (error) {
-    console.error("Error calling Groq API:", error);
-    throw new Error("Groq API error");
+    console.error("Error calling OpenAI API:", error);
+    throw new Error("OpenAI API error");
   }
 };
 
@@ -72,7 +76,7 @@ const extractRelevantJSON = (content) => {
   try {
     // Extract the JSON part from the response using regex
     const jsonMatch = content.match(/```(?:json)?\s*({[\s\S]*?})\s*```/);
-    
+
     if (!jsonMatch) {
       // If no JSON block found, try to find direct JSON object
       const directJsonMatch = content.match(/{[\s\S]*?}/);
@@ -84,15 +88,15 @@ const extractRelevantJSON = (content) => {
 
     // Get the JSON content from the matched group
     const jsonString = jsonMatch[1].trim();
-    
+
     // Parse and validate the JSON structure
     const jsonObject = JSON.parse(jsonString);
-    
+
     // Ensure all required fields are present
     const trimmedObject = {
       structuredNotes: jsonObject.structuredNotes || "Unable to process the notes.",
-      expectedResponses: Array.isArray(jsonObject.expectedResponses) 
-        ? jsonObject.expectedResponses 
+      expectedResponses: Array.isArray(jsonObject.expectedResponses)
+        ? jsonObject.expectedResponses
         : [],
       brainstormedStructure: jsonObject.brainstormedStructure || "No structure available.",
     };

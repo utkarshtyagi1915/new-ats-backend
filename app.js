@@ -18,11 +18,18 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Configure CORS
 app.use(
   cors({
-    origin: ["https://gray-bay-040cf091e.3.azurestaticapps.net","*","http://localhost:5173","http://localhost:5174"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    // allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+      // Allow all origins (including devtunnels, localhost, and Azure)
+      callback(null, true);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   }),
 );
+// Handle preflight for all routes
+app.options("*", cors());
+
 
 // Ensure required directories exist
 const uploadDir = path.join(__dirname, "uploads");

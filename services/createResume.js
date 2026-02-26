@@ -1,7 +1,11 @@
 require("dotenv").config();
-const Groq = require("groq-sdk");
+const { AzureOpenAI } = require("openai");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY2 });
+const openai = new AzureOpenAI({
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiKey: process.env.AZURE_OPENAI_API_KEY,
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+});
 
 // Helper function to extract valid JSON from response
 const extractValidJson = (data) => {
@@ -148,14 +152,14 @@ const generateResume = async (candidateData) => {
             ]
           }`;
 
-    const response = await groq.chat.completions.create({
+    const response = await openai.chat.completions.create({
       messages: [
         {
           role: "user",
           content: prompt,
         },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: process.env.AZURE_OPENAI_DEPLOYMENT,
       max_tokens: 3000,
     });
 
@@ -169,7 +173,7 @@ const generateResume = async (candidateData) => {
     return trimmedResume;
   } catch (error) {
     console.error("Error generating resume JSON:", error);
-    throw new Error("Groq API error");
+    throw new Error("OpenAI API error");
   }
 };
 

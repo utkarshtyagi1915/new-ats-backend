@@ -1,6 +1,10 @@
-const Groq = require("groq-sdk");
+const { AzureOpenAI } = require("openai");
 
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const client = new AzureOpenAI({
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiKey: process.env.AZURE_OPENAI_API_KEY,
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+});
 
 exports.generateJobDescription = async (req, res) => {
   try {
@@ -14,9 +18,9 @@ exports.generateJobDescription = async (req, res) => {
     const prompt = `Write a professional job description for the role: ${role}.
     Include responsibilities, required skills, and experience.`;
 
-    // Call Groq LLM
+    // Call OpenAI LLM
     const response = await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: process.env.AZURE_OPENAI_DEPLOYMENT,
       messages: [{ role: "user", content: prompt }],
       max_tokens: 500,
     });
